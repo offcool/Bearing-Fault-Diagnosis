@@ -1,0 +1,38 @@
+The reason for the different treatments of training and test data during the scaling process is rooted in the proper procedure for data normalization to ensure that the model is not exposed to information from the test set during training. Here's a detailed explanation:
+
+### Scaling the Training Data
+For the training data, the `fit_transform` method of the `StandardScaler` is used:
+
+```python
+train_data_scaled = scaler.fit_transform(train_data.iloc[:,:-1])
+```
+
+- **fit_transform**: This method combines two steps:
+  1. **fit**: Calculate the mean and standard deviation of the training data.
+  2. **transform**: Apply the scaling transformation (subtract the mean and divide by the standard deviation).
+
+By using `fit_transform` on the training data, you ensure that the scaler calculates the mean and variance based solely on the training set, avoiding any data leakage from the test set.
+
+### Scaling the Test Data
+For the test data, the transformation is applied manually using the mean and variance computed from the training data:
+
+```python
+test_data_scaled = (test_data.iloc[:,:-1].values - scaler.mean_) / np.sqrt(scaler.var_)
+```
+
+- **Manual transformation**: This step involves subtracting the mean and dividing by the standard deviation computed from the training data.
+
+### Why the Difference?
+
+1. **Avoiding Data Leakage**:
+   - **Training Data**: When you call `fit_transform` on the training data, the scaler calculates the mean and variance from the training data only. This ensures that the scaling parameters are not influenced by the test data, preserving the integrity of the test set as an independent dataset.
+   - **Test Data**: By manually applying the scaling using `scaler.mean_` and `scaler.var_` (which were computed from the training data), you ensure that the test data is scaled in the same way as the training data. This maintains the consistency of the scaling across both datasets.
+
+2. **Model Generalization**:
+   - The goal is to ensure that the test data remains unseen during the training process. If you were to call `fit_transform` on both the training and test data together, the scaler would compute the mean and variance across the entire dataset, causing data leakage. This would lead to overly optimistic performance metrics and a model that may not generalize well to truly unseen data.
+
+### Summary
+- **Training Data**: Use `fit_transform` to both compute the scaling parameters (mean and variance) and apply the scaling.
+- **Test Data**: Apply the scaling using the parameters computed from the training data to avoid data leakage and ensure consistent transformation.
+
+This approach ensures that the test data remains a completely independent dataset, providing a true measure of the model's performance on unseen data.
